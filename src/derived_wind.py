@@ -1,13 +1,11 @@
 # Required modules
 from netCDF4 import Dataset                           # Read / Write NetCDF4 files
 import matplotlib.pyplot as plt                       # Plotting library
-from datetime import datetime                         # Basic Dates and time types
 import os                                             # Miscellaneous operating system interfaces
 from osgeo import gdal                                # Python bindings for GDAL
 import numpy as np                                    # Scientific computing with Python
 from mpl_toolkits.basemap import Basemap              # Import the Basemap toolkit 
 import math                                           # Import the Math package
-from PIL import Image
 import numpy as np
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'true'
 import cv2
@@ -15,19 +13,15 @@ gdal.PushErrorHandler('CPLQuietErrorHandler')         # Ignore GDAL warnings
 import imageio
 #-----------------------------------------------------------------------------------------------------------
 
-# Input and output directories
-input = "Samples"; os.makedirs(input, exist_ok=True)
+# Output directories
 output = "Output_DMW"; os.makedirs(output, exist_ok=True)
 
 # Desired data:
 extent = [-75.0, -34, -34, 5.5] # Min lon, Min lat, Max lon, Max lat
 title = "Derivated_Motion_Winds"
-minute = int(datetime.now().strftime('%M'))
-yyyymmddhhmn = datetime.now().strftime('%Y%m%d%H' + str(minute - (minute % 10))) 
 
 # Opening the NetCDF Derivated Motion Winds
-#print(arquivo)
-nc = Dataset('C:\\Gaia Senses\\python_goes\\Samples_DMW\\OR_ABI-L2-DMWF-M6C14_G16_s20212810600206_e20212810609514_c20212810623429.nc') #automatizar o download
+nc = Dataset('C:\\Gaia Senses\\python_goes\\Samples_DMW\\OR_ABI-L2-DMWF-M6C14_G16_s20212810600206_e20212810609514_c20212810623429.nc') 
 
 # Read the required variables: ================================================ 
 pressure = nc.variables['pressure'][:]
@@ -71,8 +65,7 @@ wind_direction = np.asarray(wind_direction_a)
 wind_speed = np.asarray(wind_speed_a)
 lons = np.asarray(lons_a)
 lats = np.asarray(lats_a)
-
-#deixei uma unica cor de pressao      
+  
 pressure = np.asarray(pressure_a)
 pressure_index = np.where(( pressure >= 100 ) & ( pressure <= 1000 ))[0]
 color = '#0000FF' # Blue 
@@ -110,38 +103,34 @@ v = []
 componente_x_float = []
 componente_y_float = []
 for item in range(lons.shape[0]):
-    u.append(-(wind_speed[item]) * math.sin((math.pi / 180) * wind_direction[item])) #conta original do código, para fazer as flechinhas
+    u.append(-(wind_speed[item]) * math.sin((math.pi / 180) * wind_direction[item])) 
     v.append(-(wind_speed[item]) * math.cos((math.pi / 180) * wind_direction[item]))
     if str(wind_speed[item]) != 'nan':
-        aux_x = wind_speed[item] * math.cos(wind_direction[item]) #coordenadas polares para retangulares
+        aux_x = wind_speed[item] * math.cos(wind_direction[item]) # Polar to rectangular coordinates
         componente_x_float.append(aux_x)
-        aux_y = wind_speed[item] * math.sin(wind_direction[item])
+        aux_y = wind_speed[item] * math.sin(wind_direction[item]) # Polar to rectangular coordinates
         componente_y_float.append(aux_y)
     else:
         componente_x_float.append(0)
         componente_y_float.append(0)
 
-img = cv2.imread("FloatBase.exr") #base com todas as posiçoes zeradas
-teste = img.copy()
-teste = teste.astype(np.float32)
+img = cv2.imread("FloatBase.exr") # Base with all positions zeroed
+img = img.astype(np.float32)
 for i in range(lons.size):
-    pixel_x = int(((lons[i] + 75) * 403)/41) #posicao do pixel refrente a tal longitude (aquela conta de escala, semelhante a de conversao de escala de temperatura)
-    if 5.5 >= lats[i] >= -34: #se esta dentro do recorte de latitude
-        pixel_y = 389 - int(((lats[i] + 34) * 389)/39.5) #posicao do pixel refrente a tal latitude
-        if pixel_x < 403 and pixel_y < 389: #se esta dentro do tamanho da imagem
-            teste[pixel_y, pixel_x] = [componente_x_float[i], componente_y_float[i], 0] #pixel_x e pixel_y são invertidos mesmo, nao sei pq
+    pixel_x = int(((lons[i] + 75) * 403)/41) # Pixel position that refers to a certain longitude (scale)
+    if 5.5 >= lats[i] >= -34: # If it is within the latitude range
+        pixel_y = 389 - int(((lats[i] + 34) * 389)/39.5) # Pixel position that refers to a certain latitude (scale)
+        if pixel_x < 403 and pixel_y < 389: # If it is within the dimension of the image
+            img[pixel_y, pixel_x] = [componente_x_float[i], componente_y_float[i], 0] # pixel_x e pixel_y are inverted, don't know why
 
-#teste = teste.astype(np.float32)       
-#imageio.plugins.freeimage.download()
-imageio.imwrite("FloatImageDMW6.exr", teste)
-
+imageio.imwrite("FloatImageDMW6.exr", img)
 
 # Read the u and v components as numpy arrays
 u_comp = np.asarray(u) 
 v_comp = np.asarray(v)
 bmap = Basemap(llcrnrlon=extent[0], llcrnrlat=extent[1], urcrnrlon=extent[2], urcrnrlat=extent[3], epsg=4326)
 x,y = bmap(lons, lats)
-bmap.barbs(x, y, u_comp, v_comp, length=2, pivot='middle', barbcolor=color) #colocando as flechinhas na imagem aser plotada
+bmap.barbs(x, y, u_comp, v_comp, length=2, pivot='middle', barbcolor=color) # Placing the barbs in the image to be plotted
 
 plt.axis('off')
 

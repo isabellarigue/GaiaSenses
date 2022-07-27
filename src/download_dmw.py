@@ -20,7 +20,7 @@ min = datetime.strptime(yyyymmddhhmn, '%Y%m%d%H%M').strftime('%M')
 s3_client = boto3.client('s3', config=Config(signature_version=UNSIGNED))
 
 # File structure
-prefix = f'{product_name}/{year}/{day_of_year}/{hour}/OR_{product_name}-M6C02_G16_s{year}{day_of_year}{hour}{min}' #tem outros prefixos que da pra usar
+prefix = f'{product_name}/{year}/{day_of_year}/{hour}/OR_{product_name}-M6C02_G16_s{year}{day_of_year}{hour}{min}' 
 
 # Seach for the file on the server
 s3_result = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix, Delimiter = "/")

@@ -1,29 +1,22 @@
 # Required modules
 from netCDF4 import Dataset                           # Read / Write NetCDF4 files
 import matplotlib.pyplot as plt                       # Plotting library
-from datetime import datetime                         # Basic Dates and time types
 import os                                             # Miscellaneous operating system interfaces
 from osgeo import gdal                                # Python bindings for GDAL
 import numpy as np                                    # Scientific computing with Python
-#from mpl_toolkits.basemap import Basemap              # Import the Basemap toolkit 
 import math                                           # Import the Math package
-from PIL import Image
 import cv2
 gdal.PushErrorHandler('CPLQuietErrorHandler')         # Ignore GDAL warnings
 #-----------------------------------------------------------------------------------------------------------
 
-# Input and output directories
-input = "Samples"; os.makedirs(input, exist_ok=True)
+# Output directories
 output = "Output_DMW"; os.makedirs(output, exist_ok=True)
 
 # Desired data:
 extent = [-75.0, -34, -34, 5.5] # Min lon, Min lat, Max lon, Max lat
 title = "Derivated_Motion_Winds"
-minute = int(datetime.now().strftime('%M'))
-yyyymmddhhmn = datetime.now().strftime('%Y%m%d%H' + str(minute - (minute % 10))) 
 
 # Opening the NetCDF Derivated Motion Winds
-#print(arquivo)
 nc = Dataset('C:\\Gaia Senses\\python_goes\\Samples_DMW\\OR_ABI-L2-DMWF-M6C07_G16_s20212810500206_e20212810509516_c20212810523319.nc')
 
 # Read the required variables: ================================================ 
@@ -98,16 +91,10 @@ wind_direction = np.asarray(wind_direction_b)
 wind_speed = np.asarray(wind_speed_b)
 lons = np.asarray(lons_b)
 lats = np.asarray(lats_b)
-    
-# Calculating the u and v components using the wind_speed and wind direction
-u = []
-v = []
 
 componente_x = []
 componente_y = []
 for item in range(lons.shape[0]):
-    u.append(-(wind_speed[item]) * math.sin((math.pi / 180) * wind_direction[item])) #conta original do código, para fazer as flechinhas (nesse codigo n esta sendo utilizado, acho q da pra tirar)
-    v.append(-(wind_speed[item]) * math.cos((math.pi / 180) * wind_direction[item]))
     if str(wind_speed[item]) != 'nan':
         aux_x = wind_speed[item] * math.cos(wind_direction[item]) #coordenadas polares para retangulares
         comp_x = (255 * aux_x + 155)/310 #normalizando valores entre -127 e 127
@@ -119,34 +106,7 @@ for item in range(lons.shape[0]):
         componente_x.append(int(128.5)) #equivalente ao 0
         componente_y.append(int(128.5))
 
-# im = Image.open(f'C:\\Gaia Senses\\python_goes\\DMW\\base2.png') # Can be many different formats.
-# pix = im.load()
-# for i in range(lons.size):
-#     pixel_x = int(((lons[i] + 75) * 403)/41)
-#     if 5.5 >= lats[i] >= -34:
-#         pixel_y = 389 - int(((lats[i] + 34) * 389)/39.5)
-#         for k in range(10):
-#             if (403 > (pixel_x + k) > 0) and (389 > (pixel_y + k) > 0):
-#                 pix[(pixel_x + k), (pixel_y + k)] = (componente_x[i], componente_y[i], 0)
-#             if (403 > (pixel_x - k) > 0) and (389 > (pixel_y - k) > 0):
-#                 pix[(pixel_x - k), (pixel_y - k)] = (componente_x[i], componente_y[i], 0)
-#             if (403 > (pixel_x - k) > 0) and (389 > (pixel_y + k) > 0):
-#                 pix[(pixel_x - k), (pixel_y + k)] = (componente_x[i], componente_y[i], 0)
-#             if (403 > (pixel_x + k) > 0) and (389 > (pixel_y - k) > 0):
-#                 pix[(pixel_x + k), (pixel_y - k)] = (componente_x[i], componente_y[i], 0)
-#             if (403 > (pixel_x + k) > 0) and (389 > (pixel_y) > 0):
-#                 pix[(pixel_x + k), (pixel_y)] = (componente_x[i], componente_y[i], 0)
-#             if (403 > (pixel_x - k) > 0) and (389 > (pixel_y) > 0):
-#                 pix[(pixel_x - k), (pixel_y)] = (componente_x[i], componente_y[i], 0)
-#             if (403 > (pixel_x) > 0) and (389 > (pixel_y - k) > 0):
-#                 pix[(pixel_x), (pixel_y - k)] = (componente_x[i], componente_y[i], 0)
-#             if (403 > (pixel_x) > 0) and (389 > (pixel_y + k) > 0):
-#                 pix[(pixel_x), (pixel_y + k)] = (componente_x[i], componente_y[i], 0)
-
-# im.save(f'C:\\Gaia Senses\\python_goes\\DMW\\DMW_norm10.png', transparent=True, bbox_inches='tight')  # Save the modified pixels as .png
-
 im = cv2.imread(f'C:\\Gaia Senses\\python_goes\\DMW\\base.png') #a base é uma imagem rgb com todos os pixels nos valores (int(128.5), int(128.5), 0)
-#pix = im.load()
 for i in range(lons.size):
     pixel_x = int(((lons[i] + 75) * 403)/41) #posicao do pixel refrente a tal longitude (aquela conta de escala, semelhante a de conversao de escala de temperatura)
     if 5.5 >= lats[i] >= -34: #se esta dentro do recorte de latitude
@@ -156,19 +116,3 @@ for i in range(lons.size):
 
 cv2.imshow('teste',im) 
 cv2.imwrite(f'C:\\Gaia Senses\\python_goes\\DMW\\norm2_size10.png', im)              
-#im.save(f'C:\\Gaia Senses\\python_goes\\DMW\\DMW_circle.png', transparent=True, bbox_inches='tight')  # Save the modified pixels as .png
-
-# Read the u and v components as numpy arrays
-u_comp = np.asarray(u) #acho q da pra tirar
-v_comp = np.asarray(v)
-#bmap = Basemap(llcrnrlon=extent[0], llcrnrlat=extent[1], urcrnrlon=extent[2], urcrnrlat=extent[3], epsg=4326)
-#x,y = bmap(lons, lats)
-#bmap.barbs(x, y, u_comp, v_comp, length=2, pivot='middle', barbcolor=color)
-
-plt.axis('off')
-
-# Save the image
-plt.savefig(f'C:\\Gaia Senses\\python_goes\\{output}\\{title}{i}.png', transparent=True, bbox_inches='tight')
-
-# Show the image
-plt.show()
