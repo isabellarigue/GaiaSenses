@@ -191,8 +191,8 @@ import numpy as np
 def geo2grid(lat, lon):
 
     # Values scale and offset for NDVI 
-    xscale, xoffset = 1.4e-02, -0.151865
-    yscale, yoffset = -1.4e-02, 0.151865
+    xscale, xoffset = 1.4e-03, -0.151865
+    yscale, yoffset = -1.4e-03, 0.151865
     
     x, y = latlon2xy(lat, lon)
     col = (x - xoffset)/xscale
@@ -237,8 +237,8 @@ def latlon2xy(lat, lon):
 x, y = geo2grid(lat, lon)
 
 # Open the file
-matrix = np.load('ndvi_20210102_br_max.npy', allow_pickle=True) # Esse é um arquivo de teste fornecido pelo CEPAGRI 
-ndvi = matrix[x][y]
+array = np.load('ndvi_20210102_br_max.npy', allow_pickle=True) # Esse é um arquivo de teste fornecido pelo CEPAGRI 
+ndvi = array[x][y]
 if ndvi < 0.33:
     print("composição ndvi")
     exit()
